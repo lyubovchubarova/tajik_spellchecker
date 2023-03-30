@@ -5,17 +5,20 @@ from transformers import AutoTokenizer
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 
-from model import SpellcheckerDataModule, SoftMaskedBert
+from model import SpellcheckerDataModule, SoftMaskedBert, MLMBert
 from evaluation import show_model_performance
 
 import os
 import torch
+import argparse
 
 
-def main():
+def main(MODEL, BERT, DEVICE):
+
     BATCH_SIZE = 32
     MAX_TOKEN_LEN = 64
     NUM_WORKERS = 16
+
     TRAIN_DATA_PATH = "/home/jovyan/sqqqqaid/spellchecker_data/statistically_augmented_dataset_500k.txt"
     EVAL_DATA_PATH = "/home/jovyan/sqqqqaid/spellchecker_data/val_set.txt"
     CHECKPOINTS_PATH = "/home/jovyan/sqqqqaid/spellchecker_checkpoints"
@@ -25,8 +28,11 @@ def main():
     torch.set_float32_matmul_precision('high')
 
     print("[INITIALIZING MODEL...]")
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
-    model = SoftMaskedBert("bert-base-multilingual-cased", mask_token_id=tokenizer.mask_token_id)
+    tokenizer = AutoTokenizer.from_pretrained(BERT)
+    if MODEL == "masked":
+        model = MLMBert(BERT)
+    elif MODEL == "softmasked":
+        model = SoftMaskedBert(BERT, mask_token_id=tokenizer.mask_token_id)
     print("[COMPLETE INITIALIZING MODEL...]")
 
     print("[READING DATA...]")
@@ -53,7 +59,7 @@ def main():
                                                        mode="min")
 
     trainer = Trainer(
-        accelerator="gpu",
+        accelerator=DEVICE,
         max_epochs=10,
         logger=wandb_logger,
         callbacks=[
@@ -75,4 +81,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--model", type=str, default="softmasked")  # softmasked or masked
+    argparser.add_argument("--bert", type=str, default="bert-base-multilingual-cased")
+    argparser.add_argument("--device", type=str, default="gpu")
+    args = argparser.parse_args()
+
+    main(args.model, args.bert, args.device)

@@ -1,4 +1,4 @@
-from .masked_bert import BertForMaskedLM
+from .masked_bert import MLMBert
 from .soft_masked_bert import SoftMaskedBert
 from .train_config import TrainConfig
 from .dataset import SpellcheckerDataset, SpellcheckerDataModule
@@ -6,7 +6,7 @@ from .dataset import SpellcheckerDataset, SpellcheckerDataModule
 __all__ = [
     TrainConfig,
     SoftMaskedBert,
-    BertForMaskedLM,
+    MLMBert,
     SpellcheckerDataset,
     SpellcheckerDataModule,
 ]
