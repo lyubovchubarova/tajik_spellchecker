@@ -15,6 +15,7 @@ class SpellcheckerDataset(Dataset):
         self.tokenizer = tokenizer
         self.data = data
         self.max_length = max_length
+        self.mistaken, self.corrected = list(self.data.columns)
 
     def __getitem__(self, idx):
         """
@@ -25,13 +26,13 @@ class SpellcheckerDataset(Dataset):
             * labels are {0,1} indicating if the token contains a mistake.
         """
         encodings = self.tokenizer.encode_plus(
-            self.data.iloc[idx]["mistaken"],
+            self.data.iloc[idx][self.mistaken],
             truncation=True,
             padding="max_length",
             max_length=self.max_length,
         )
         encodings["output_ids"] = self.tokenizer.encode_plus(
-            self.data.iloc[idx]["corrected"],
+            self.data.iloc[idx][self.corrected],
             truncation=True,
             padding="max_length",
             max_length=self.max_length,
@@ -55,6 +56,7 @@ class SpellcheckerDataModule(LightningDataModule):
                  batch_size: int = 32,
                  eval_fraction=0.3,
                  max_token_len: int = 128,
+                 num_workers=16,
                  ):
         super().__init__()
         self.tokenizer = tokenizer
@@ -66,6 +68,7 @@ class SpellcheckerDataModule(LightningDataModule):
         self.eval_fraction = eval_fraction
 
         self.max_token_len = max_token_len
+        self.num_workers = num_workers
 
     def setup(self, stage: str):
         data_full = SpellcheckerDataset(self.data,
@@ -86,12 +89,13 @@ class SpellcheckerDataModule(LightningDataModule):
             self.data_train,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=4
+            num_workers=self.num_workers
         )
 
     def val_dataloader(self):
-        return DataLoader(self.data_eval, batch_size=self.batch_size, num_workers=4)
+        return DataLoader(self.data_eval, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def predict_dataloader(self):
         dataset = SpellcheckerDataset(self.predict_data, self.tokenizer, self.max_token_len)
-        return DataLoader(dataset, batch_size=self.batch_size, num_workers=4, shuffle=False)
+        return DataLoader(dataset, batch_size=self.batch_size, num_workers=-1, shuffle=False)
+
