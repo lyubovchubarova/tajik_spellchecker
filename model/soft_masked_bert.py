@@ -12,7 +12,6 @@ class SoftMaskedBert(TrainConfig):
 
     def __init__(self, model_name: str, mask_token_id: int):
         super().__init__()
-        self.save_hyperparameters()
         self.bert = BertForMaskedLM.from_pretrained(model_name)
 
         self.mask_token_id = mask_token_id
@@ -43,6 +42,8 @@ class SoftMaskedBert(TrainConfig):
 
         # coef to compute loss
         self.correction_coef = 0.8
+
+        self.save_hyperparameters()
 
     def forward(
             self,

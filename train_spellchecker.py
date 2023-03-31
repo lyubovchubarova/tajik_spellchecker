@@ -51,10 +51,10 @@ def main(MODEL, BERT, DEVICE):
 
     )
 
-    wandb_logger = WandbLogger(project="spellchecker")
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(dirpath=CHECKPOINTS_PATH,
-                                                       filename="version0",
-                                                       save_top_k=-1,
+    wandb_logger = WandbLogger(project="spellchecker", name=f"{MODEL}_{BERT}")
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(dirpath=f"{CHECKPOINTS_PATH}/{MODEL}_{BERT}",
+                                                       filename=f"{MODEL}_{BERT}",
+                                                       save_top_k=1,
                                                        verbose=True,
                                                        monitor="val_loss",
                                                        mode="min")
