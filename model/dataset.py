@@ -6,14 +6,16 @@ from pytorch_lightning import LightningDataModule
 
 
 class SpellcheckerDataset(Dataset):
-    def __init__(self, data, tokenizer, max_length=32):
+    def __init__(self, data, tokenizer, model_type, max_length=32):
         """
         :param data: DataFrame with ["mistaken", "corrected"] columns.
         :param tokenizer: transformers tokenizer from pretrained.
+        :param model_type: "masked" or "softmasked".
         :param max_length: max len to pad or truncate inputs to.
         """
         self.tokenizer = tokenizer
         self.data = data
+        self.model_type = model_type
         self.max_length = max_length
         self.mistaken, self.corrected = list(self.data.columns)
 
@@ -39,7 +41,12 @@ class SpellcheckerDataset(Dataset):
         )["input_ids"]
 
         encodings = {k: torch.tensor(v) for k, v in encodings.items()}
-        encodings["labels"] = (encodings["input_ids"] == encodings["output_ids"]).float()
+        encodings["labels"] = (encodings["input_ids"] == encodings["output_ids"])
+
+        if self.model_type == "masked":
+            encodings["labels"] = encodings["labels"].long()
+        elif self.model_type == "softmasked":
+            encodings["labels"] = encodings["labels"].float()
 
         return encodings
 
@@ -52,6 +59,7 @@ class SpellcheckerDataModule(LightningDataModule):
     def __init__(self,
                  data: pd.DataFrame,
                  tokenizer: AutoTokenizer,
+                 model_type: str,  # "masked" or "softmasked"
                  predict_data: pd.DataFrame = pd.DataFrame(),
                  batch_size: int = 32,
                  eval_fraction=0.3,
@@ -60,6 +68,7 @@ class SpellcheckerDataModule(LightningDataModule):
                  ):
         super().__init__()
         self.tokenizer = tokenizer
+        self.model_type = model_type
 
         self.data = data
         self.predict_data = predict_data
@@ -73,6 +82,7 @@ class SpellcheckerDataModule(LightningDataModule):
     def setup(self, stage: str):
         data_full = SpellcheckerDataset(self.data,
                                         self.tokenizer,
+                                        self.model_type,
                                         self.max_token_len)
 
         eval_len = int(self.data.shape[0] * self.eval_fraction)
@@ -96,6 +106,6 @@ class SpellcheckerDataModule(LightningDataModule):
         return DataLoader(self.data_eval, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def predict_dataloader(self):
-        dataset = SpellcheckerDataset(self.predict_data, self.tokenizer, self.max_token_len)
+        dataset = SpellcheckerDataset(self.predict_data, self.tokenizer, self.model_type, self.max_token_len)
         return DataLoader(dataset, batch_size=self.batch_size, num_workers=-1, shuffle=False)
 

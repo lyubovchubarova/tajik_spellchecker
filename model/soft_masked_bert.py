@@ -47,8 +47,8 @@ class SoftMaskedBert(TrainConfig):
     def forward(
             self,
             input_ids: torch.Tensor,
-            token_type_ids: torch.Tensor,
-            attention_mask: torch.Tensor,
+            token_type_ids: Optional[torch.Tensor] = None,
+            attention_mask: Optional[torch.Tensor] = None,
             output_ids: Optional[torch.Tensor] = None,
             labels: Optional[torch.Tensor] = None
     ):

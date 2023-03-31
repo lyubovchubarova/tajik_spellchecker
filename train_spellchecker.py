@@ -43,6 +43,7 @@ def main(MODEL, BERT, DEVICE):
     data_module = SpellcheckerDataModule(
         data,
         tokenizer,
+        MODEL,
         predict_data=predict_data,
         batch_size=BATCH_SIZE,
         max_token_len=MAX_TOKEN_LEN,
