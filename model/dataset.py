@@ -107,5 +107,5 @@ class SpellcheckerDataModule(LightningDataModule):
 
     def predict_dataloader(self):
         dataset = SpellcheckerDataset(self.predict_data, self.tokenizer, self.model_type, self.max_token_len)
-        return DataLoader(dataset, batch_size=self.batch_size, num_workers=-1, shuffle=False)
+        return DataLoader(dataset, batch_size=1, num_workers=self.num_workers, shuffle=False)
 
